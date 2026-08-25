@@ -6,8 +6,9 @@ alwaysApply: false
 
 # Cloudflare D1
 
-D1 is Cloudflare's SQLite database. **This starter has no D1 database configured yet.**
-The conventions below apply once one is added, and describe how to add it.
+D1 is Cloudflare's SQLite database. This app binds D1 as `DB` (`quizmaker-jy-db`).
+The `users` table is created by `migrations/0001_create_users.sql`. Apply new
+migrations locally only.
 
 ## Adding D1 to the project
 
