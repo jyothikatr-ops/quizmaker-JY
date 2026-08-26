@@ -1,5 +1,5 @@
 Date created: 2026-08-25
-Date last modified: 2026-08-25
+Date last modified: 2026-08-26
 
 # Register, Login, and Logout - Technical PRD
 
@@ -263,7 +263,7 @@ Run `npm test` and confirm red (missing binding, missing migration, or missing c
 - Migration file under `migrations/`
 - Updated `cloudflare-env.d.ts` from `cf-typegen`
 
-### Phase 2: User service - PLANNED
+### Phase 2: User service - COMPLETED
 
 **Objective**: All user persistence goes through one service; route handlers never talk to D1 directly. Service tests with a fake D1 prove create, update, delete, and lookup.
 
@@ -302,7 +302,7 @@ Run `npm test` — **RED** (module missing or methods unimplemented).
 - User service module and colocated tests
 - Shared user types (public user vs row that includes `password_hash`)
 
-### Phase 3: Auth API routes - PLANNED
+### Phase 3: Auth API routes - COMPLETED
 
 **Objective**: Register, login, and logout work over HTTP POST. Route tests call the handlers with `Request` objects and a mocked user service.
 
@@ -460,12 +460,18 @@ Planned; fill in line references as code is written.
 - `vitest.config.ts` - Vitest harness (`jsdom`, `@/` via `vite-tsconfig-paths`)
 - `migrations/0001_create_users.sql` - `users` table and username/email indexes
 - `src/lib/db/users-schema.test.ts` - Phase 1 contract tests for migration SQL and `DB` binding
-- `src/lib/services/user-service.ts` - create, update, delete, lookup; only module that queries `users` (Phase 2)
+- `src/lib/services/user-service.ts` - create, update, delete, lookup; only module that queries `users`
+- `src/lib/services/user-service.ts:3-21` - public user vs create input types; `UserAuthRecord` adds `passwordHash`
+- `src/lib/services/user-service.ts:39-44` - `UserAlreadyExistsError` for unique-constraint mapping
+- `src/lib/services/user-service.ts:89-106` - `createUser` with `?1`–`?5` and no public hash
+- `src/lib/services/user-service.ts:117-130` - `findAuthByUsername` is the only lookup that selects `password_hash`
 - `src/lib/services/user-service.test.ts` - mocked-D1 tests for the user service
-- `src/lib/auth/hash-password.ts` - client SHA-256 helper (Web Crypto)
-- `src/lib/auth/hash-password.test.ts` - digest length, stability, and no plaintext
+- `src/lib/auth/hash-password.ts` - client SHA-256 helper (Web Crypto) (Phase 4)
+- `src/lib/auth/hash-password.test.ts` - digest length, stability, and no plaintext (Phase 4)
 - `src/lib/auth/schemas.ts` - Zod schemas for register/login bodies
 - `src/lib/auth/schemas.test.ts` - schema accept/reject cases
+- `src/lib/auth/timing-safe-equal.ts` - constant-time hex compare used by login
+- `src/lib/auth/http.ts` - `{ error }` JSON helper
 - `src/app/api/auth/register/route.ts` - POST register
 - `src/app/api/auth/register/route.test.ts` - 201 / 400 / 409 / 500
 - `src/app/api/auth/login/route.ts` - POST login
@@ -516,7 +522,7 @@ await db
 
 ### Important Notes
 
-- Ask before adding `zod`. It is the project-standard validator and is required for these routes, but it is not in `package.json` yet. Vitest and its testing-skill companions are approved by the Testing Approach section.
+- `zod` is installed and used to validate register/login request bodies. Vitest and its testing-skill companions are approved by the Testing Approach section.
 - Do not add a hashing library; Web Crypto works in the browser and on Workers.
 - `getCloudflareContext()` and `env.DB` are server-only. Never import the user service into a `'use client'` file.
 - Local D1 only: `npx wrangler d1 migrations apply <db> --local`. Do not use `--remote`.
@@ -573,7 +579,7 @@ await db
 
 - `@opennextjs/cloudflare` `getCloudflareContext()` - `env.DB`
 - shadcn/ui `button`, `card`, `field`, `input`, `label` - auth forms
-- `zod` - **proposed, not installed**; validate register/login bodies. Ask before installing.
+- `zod` - validate register/login bodies (installed in Phase 3)
 - Vitest harness - **approved** for this PRD: `vitest`, `@vitejs/plugin-react`, `@testing-library/react`, `@testing-library/user-event`, `jsdom`, `vite-tsconfig-paths`
 - User service - only persistence layer for `users`
 
@@ -666,7 +672,7 @@ When working with this PRD:
 5. Add real file paths and `filepath:line-number` citations under Technical Implementation Details as code lands
 6. Mark acceptance criteria when the behavior is actually verified, not when the file exists
 7. Add troubleshooting entries when bugs are found and fixed
-8. Ask before adding any npm dependency other than the approved Vitest harness. Still ask before adding `zod`
+8. Ask before adding any npm dependency other than the approved Vitest harness. `zod` is already installed.
 9. Never apply D1 migrations with `--remote` and never run `npm run deploy` unless the user explicitly asks
 10. Keep this file current; remove details that no longer match the code
 
@@ -674,14 +680,12 @@ When working with this PRD:
 
 ## Current Status
 
-**Last Updated**: 2026-08-25
-**Current Phase**: Phase 1 - D1 and users migration
-**Status**: COMPLETED — waiting for review before Phase 2
-**Phase 1 results**:
-- TDD: 6 schema/binding tests were red (no `DB` binding, no `migrations/`), then green after D1 + migration
-- `npm test`: 1 file, 6 passed
-- `npm run lint`: passed (eslint ., no issues)
-- `npm run build`: passed (Next.js 16.2.12, compiled successfully)
-- Local D1: `0001_create_users.sql` applied with `--local` only (not `--remote`)
-- Database: `quizmaker-jy-db`, binding `DB`, id `98c90215-9cae-491a-816a-ad53ccc9c430`
-**Next Steps**: After review, start Phase 2 (user service, test-first). Propose `zod` before installing it (needed in Phase 3).
+**Last Updated**: 2026-08-26
+**Current Phase**: Phase 3 - Auth API routes
+**Status**: COMPLETED — waiting for review before Phase 4
+**Phase 3 results**:
+- TDD: schema/route tests were red (missing `./schemas`, `./timing-safe-equal`, `./route`), then green after implementation
+- `npm test`: 7 files, 34 passed
+- `npm run lint`: passed after fixing unused-var warnings in schema tests
+- Added `zod` for request validation
+**Next Steps**: After review, start Phase 4 (auth UI and MCQ stub).

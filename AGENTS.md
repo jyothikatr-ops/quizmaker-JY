@@ -27,10 +27,10 @@ for the current phase.
 - **Wrangler** for Cloudflare configuration, secrets, and deployment
 - **Cloudflare D1** bound as `DB` (`quizmaker-jy-db`); schema lives in `migrations/`
 - **Vitest** for unit tests (`npm test`)
+- **Zod** for request validation
 
-No authentication or AI SDK is installed yet. Do not write code that
-imports one without adding it first and telling the user. **Zod** is still
-not installed; propose it before adding it (needed for auth request validation).
+Register, login, and logout HTTP routes exist. No AI SDK is installed yet. Do not
+write code that imports one without adding it first and telling the user.
 
 ## Layout
 
