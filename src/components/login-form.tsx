@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { hashPassword } from "@/lib/auth/hash-password";
+import { setCurrentUser, type CurrentUser } from "@/lib/auth/current-user";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -51,11 +52,21 @@ export function LoginForm({
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ username, passwordHash }),
 			});
-			const payload = (await response.json()) as { error?: string };
+			const payload = (await response.json()) as CurrentUser & { error?: string };
 
 			if (!response.ok) {
 				setError(payload.error ?? "Invalid username or password");
 				return;
+			}
+
+			if (payload.id) {
+				setCurrentUser({
+					id: payload.id,
+					firstName: payload.firstName ?? "",
+					lastName: payload.lastName ?? "",
+					username: payload.username ?? "",
+					email: payload.email ?? "",
+				});
 			}
 
 			router.push("/mcqs");

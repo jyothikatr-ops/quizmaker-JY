@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LoginForm } from "./login-form";
 import { hashPassword } from "@/lib/auth/hash-password";
+import { CURRENT_USER_KEY } from "@/lib/auth/current-user";
 
 const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 
@@ -11,6 +12,7 @@ vi.mock("next/navigation", () => ({
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	sessionStorage.clear();
 	vi.stubGlobal("fetch", vi.fn());
 });
 
@@ -34,8 +36,15 @@ describe("LoginForm", () => {
 	});
 
 	it("POSTs a passwordHash and navigates to /mcqs on 200", async () => {
+		const publicUser = {
+			id: "user-ada",
+			firstName: "Ada",
+			lastName: "Lovelace",
+			username: "ada",
+			email: "ada@school.edu",
+		};
 		vi.mocked(fetch).mockResolvedValue(
-			new Response(JSON.stringify({ id: "1" }), { status: 200 }),
+			new Response(JSON.stringify(publicUser), { status: 200 }),
 		);
 
 		render(<LoginForm />);
@@ -56,6 +65,7 @@ describe("LoginForm", () => {
 		const [, options] = vi.mocked(fetch).mock.calls[0] ?? [];
 		expect(String(options?.body)).not.toContain("password1");
 		expect(push).toHaveBeenCalledWith("/mcqs");
+		expect(JSON.parse(sessionStorage.getItem(CURRENT_USER_KEY) ?? "null")).toEqual(publicUser);
 	});
 
 	it("shows a generic invalid-credentials message on 401 and does not navigate", async () => {
