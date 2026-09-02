@@ -5,7 +5,7 @@ Date last modified: 2026-09-02
 
 ## Overview/Problem
 
-Quiz Maker already lets a teacher register, log in, and land on `/mcqs`, but that page is still a stub: a title, placeholder copy, and logout. Teachers have no way to store a question, attach answer choices, edit what they wrote, preview it the way a student would see it, or record whether a selected choice was right or wrong. This phase replaces the stub with a D1-backed bank of multiple-choice questions so a teacher can create, list, edit, preview, delete, and attempt questions.
+Quiz Maker lets a teacher register, log in, and manage a D1-backed bank of multiple-choice questions. `/mcqs` is a list (name, question, actions) with create, edit, preview/attempt, delete, and logout. The old stub is gone. This PRD is the source of truth for that capability. Phases 1–5 are implemented, verified, committed, and pushed. The Worker is deployed and remote `0002` is applied.
 
 **Do not implement any phase until Jyothika reviews this PRD and says to proceed.** After that, implement one phase at a time, stop for review, and only commit or deploy that phase when she asks.
 
@@ -40,7 +40,7 @@ Standing repo rules still apply: do not deploy or apply remote migrations on you
 - After login, persist the public user in `sessionStorage` so create can send `createdBy`; clear it on logout. No cookie or server session.
 - An MCQ service that owns all D1 access for those tables (create, list, get, update, delete, record attempt, list attempts)
 - HTTP endpoints for MCQ CRUD and for recording/listing attempts on a question
-- `/mcqs` becomes a list page: shadcn `Table` of all questions (name, question, actions) plus a Create button and the existing logout action
+- `/mcqs` is a list page: shadcn `Table` of all questions (name, question, actions) plus a Create question link (styled with `buttonVariants`) and logout
 - A shared create/edit page with Save and Cancel; the form starts with two choices and allows up to six
 - Row actions behind a vertical-ellipsis dropdown: Edit, Preview, Delete
 - A preview page that presents the question as a student would see it and can submit an attempt
@@ -311,7 +311,7 @@ If a command produces no files, stop and pick an equivalent already in the Base 
 
 Do not introduce `react-hook-form`. Client components validate, then `fetch`. Surface errors with `FieldError` or a page-level message, same as the auth forms.
 
-#### List (`/mcqs`) — replace the stub
+#### List (`/mcqs`) — shipped (replaced the stub)
 
 Widen the page (about `max-w-4xl` / `max-w-5xl`), left-aligned. Keep logout.
 
@@ -320,7 +320,7 @@ Widen the page (about `max-w-4xl` / `max-w-5xl`), left-aligned. Keep logout.
 - Logout: existing `POST /api/auth/logout` then `/login`
 - shadcn `Table` columns: **Name**, **Question**, **Actions**
 - Question cell: the stored prompt. Long text is clamped to two lines in the table (`line-clamp-2`); the full text is on edit/preview
-- Empty state when `mcqs` is `[]`: short copy plus the same Create button. Do not render an empty table body with no explanation
+- Empty state when `mcqs` is `[]`: short copy plus the same Create question link. Do not render an empty table body with no explanation
 - Actions column: icon button with Lucide `EllipsisVertical` (accessible name “Open actions”). Dropdown items:
   - **Edit** → `/mcqs/[id]/edit`
   - **Preview** → `/mcqs/[id]/preview`
@@ -503,10 +503,11 @@ Auth suite today: 12 files, 47 tests. Phase 4 retires `src/components/mcq-stub.t
 5. Shared `McqForm` on `/mcqs/new` and `/mcqs/[id]/edit` — two to six choices, client validation, create POST includes `createdBy`, edit PUT omits it, no fake creator
 6. `McqPreview` on `/mcqs/[id]/preview` — radios without `isCorrect`, POST attempt, Correct/Incorrect, no second submit
 7. Deleted `src/components/mcq-stub.tsx` and its test
+8. After review, Create / Back links were restyled with `buttonVariants` (not `Button render={<Link />}`) so Base UI stops warning in the Next.js console
 
 **Deliverables:** list / form / preview components and pages; colocated tests; stub removed
 
-**Stop for review.** Browser-check on `npm run dev` during review. Then commit / deploy only if asked.
+**Reviewed on `npm run dev`.** Committed with Phase 5 in `fbf8263` and `4ce7683` (see Current Status). Deployed 2026-09-02.
 
 ### Phase 5: Verify - COMPLETED
 
@@ -521,16 +522,18 @@ Auth suite today: 12 files, 47 tests. Phase 4 retires `src/components/mcq-stub.t
 5. `npm run preview` ready on `http://127.0.0.1:8787` with `env.DB` local. HTTP: pages 200; POST create 201; GET 200; PUT 200; attempts 201/201; missing `createdBy` 400; unknown id 404; logout POST 200
 6. Browser click-through was done in Phase 4 review (`npm run dev`). This phase checked page shells and APIs on preview; no browser MCP here. The Base UI `Button`+`Link` console warning was fixed by styling `Link` with `buttonVariants`
 7. `AGENTS.md` project blurb now describes MCQ CRUD, not register/login/logout only
+8. Jyothika asked to commit and push: `fbf8263` (Phases 1–4) and `4ce7683` (link fix + Phase 5 record) are on `origin/feat/register-login-logout`
+9. Jyothika asked to deploy and apply remote D1: `0002` applied `--remote` (no older `0002` on remote). `npm run deploy` exit 0. Worker `quizmaker-jy` version `d39d5f82-a0d5-4068-8a5a-637fe6eb25de` at https://quizmaker-jy.jyothika-tr.workers.dev. Production smoke: `/login` 200, `/mcqs` 200, `/api/mcqs` 200 `{"mcqs":[]}`
 
-**Deliverables:** recorded results in this PRD’s Current Status; `AGENTS.md` updated
+**Deliverables:** recorded results in this PRD’s Current Status; `AGENTS.md` updated; commits pushed; Worker deployed; remote `0002` applied
 
-**Stop for review.** Then commit / deploy only if asked. Remote D1 apply is a separate explicit ask.
+**Capability complete.** Further product work needs a new PRD.
 
 ---
 
 ## Technical Implementation Details
 
-### Key Files (planned)
+### Key Files
 
 - `migrations/0002_create_mcq_tables.sql:3-37` — `mcqs`, `mcq_choices`, `mcq_attempts` and indexes
 - `src/lib/db/mcq-schema.test.ts` — Phase 1 contract tests (reads `0002` from disk)
@@ -553,16 +556,19 @@ Auth suite today: 12 files, 47 tests. Phase 4 retires `src/components/mcq-stub.t
 - `src/app/mcqs/new/page.tsx` — create (`McqForm mode="create"`)
 - `src/app/mcqs/[id]/edit/page.tsx` — edit (`McqForm mode="edit"`; awaits `params`)
 - `src/app/mcqs/[id]/preview/page.tsx` — preview / attempt (awaits `params`)
-- `src/components/mcq-list.tsx` — table, create button, actions menu, delete dialog, logout
+- `src/components/mcq-list.tsx` — table, create link, actions menu, delete dialog, logout
 - `src/components/mcq-list.tsx:41-52` — `GET /api/mcqs` helper used by first load and after delete
 - `src/components/mcq-list.tsx:92-103` — logout POST + `clearCurrentUser` + `/login`
+- `src/components/mcq-list.tsx:128-132` — Create question is a `Link` styled with `buttonVariants()`
 - `src/components/mcq-list.tsx:215-241` — “Delete question?” dialog; name in `<strong>`
 - `src/components/mcq-form.tsx` — shared create/edit form
 - `src/components/mcq-form.tsx:118-148` — client validation messages from the PRD
 - `src/components/mcq-form.tsx:157-177` — create POST with `createdBy`; edit PUT without it
+- `src/components/mcq-form.tsx:198-200` — 404 “Back to questions” `Link` + `buttonVariants`
 - `src/components/mcq-preview.tsx` — student-facing attempt UI
 - `src/components/mcq-preview.tsx:54-64` — strips `isCorrect` before render
 - `src/components/mcq-preview.tsx:78-101` — POST attempt; Correct/Incorrect; no second submit
+- `src/components/mcq-preview.tsx:110-112` / `:154-156` — Back `Link` + `buttonVariants`
 - `src/lib/auth/current-user.ts` — get/set/clear `quizmaker.currentUser` in `sessionStorage` (client-only; no D1)
 - `src/components/login-form.tsx:62-70` — 200 login writes the public user to `sessionStorage`
 - `src/components/ui/dropdown-menu.tsx`, `textarea.tsx`, `radio-group.tsx` — added via shadcn CLI
@@ -819,6 +825,12 @@ When working with this PRD:
 
 **Last Updated**: 2026-09-02
 **Current Phase**: Phase 5 - Verify
-**Status**: COMPLETED — waiting for review
-**Verification**: `npm test` 20 files, 108 passed. `npm run lint` exit 0. `npm run build` exit 0. `npm run preview` on `http://127.0.0.1:8787` with local D1: create/update/attempt/delete HTTP paths green; D1 row had `name`/`question`/`created_by`/timestamps, 2 choices, attempt snapshots 1 then 0. `AGENTS.md` updated. No browser MCP this session — UI click-through was Phase 4; preview page shells 200.
-**Next Steps**: Deploy and remote D1 apply only if asked. This capability’s phases are complete.
+**Status**: COMPLETED — committed and pushed
+**Branch**: `feat/register-login-logout` (in sync with `origin/feat/register-login-logout`)
+**Commits**:
+- `fbf8263` — Add MCQ question bank so teachers can create, edit, preview, and delete questions (Phases 1–4: schema, service, API, UI)
+- `4ce7683` — Fix MCQ navigation links so Base UI stops warning, and record Phase 5 verification
+**Verification**: `npm test` 20 files, 108 passed. `npm run lint` exit 0. `npm run build` exit 0. `npm run preview` on `http://127.0.0.1:8787` with local D1: create/update/attempt/delete HTTP paths green; D1 row had `name`/`question`/`created_by`/timestamps, 2 choices, attempt snapshots 1 then 0. `AGENTS.md` updated. UI click-through was Phase 4 on `npm run dev` (including the Base UI console warning, now fixed). Preview page shells 200.
+**Deployed**: 2026-09-02 — `npm run deploy` exit 0. Worker `quizmaker-jy` version `d39d5f82-a0d5-4068-8a5a-637fe6eb25de` at https://quizmaker-jy.jyothika-tr.workers.dev. Production smoke: `/login` 200, `/mcqs` 200, `/api/mcqs` 200 `{"mcqs":[]}`.
+**Remote D1**: `0002_create_mcq_tables.sql` applied (`--remote`). Remote had no older `0002` and no MCQ tables beforehand. Remote now has `mcqs`, `mcq_choices`, `mcq_attempts`.
+**Next Steps**: This capability’s phases are complete. Further product work needs a new PRD.
