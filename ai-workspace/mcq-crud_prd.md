@@ -508,23 +508,23 @@ Auth suite today: 12 files, 47 tests. Phase 4 retires `src/components/mcq-stub.t
 
 **Stop for review.** Browser-check on `npm run dev` during review. Then commit / deploy only if asked.
 
-### Phase 5: Verify - PLANNED
+### Phase 5: Verify - COMPLETED
 
 **Objective**: Confirm the full suite, lint, production build, and Workers-runtime D1 access. This phase does not add new product behavior.
 
-**Tasks**:
+**Verified:**
 
-1. `npm test` — record file and test counts
-2. `npm run lint`
-3. `npm run build`
-4. Local D1 inspect: the three tables exist; a create via preview runtime leaves a `mcqs` row with `name`, `question`, `created_by`, and timestamps, plus `mcq_choices` rows; an attempt leaves a `mcq_attempts` row whose `is_correct` matches the selected choice
-5. `npm run preview` and HTTP checks against the Workers runtime for the new routes
-6. Browser pass: create, edit, preview correct and incorrect, delete, cancel, logout
-7. Update `AGENTS.md` project blurb so it no longer says the current work is register/login/logout only
+1. `npm test` — 20 files, 108 passed
+2. `npm run lint` — exit 0
+3. `npm run build` — exit 0 (Next.js 16.2.12 Turbopack; MCQ pages and `/api/mcqs*` routes present)
+4. Local D1: `mcqs`, `mcq_choices`, `mcq_attempts` exist. After a Workers-preview create named `Phase5 verify`, the row had `name`, a non-empty `question`, `created_by`, and timestamps; 2 `mcq_choices`; two `mcq_attempts` with `is_correct` 1 then 0. That verify question was then deleted
+5. `npm run preview` ready on `http://127.0.0.1:8787` with `env.DB` local. HTTP: pages 200; POST create 201; GET 200; PUT 200; attempts 201/201; missing `createdBy` 400; unknown id 404; logout POST 200
+6. Browser click-through was done in Phase 4 review (`npm run dev`). This phase checked page shells and APIs on preview; no browser MCP here. The Base UI `Button`+`Link` console warning was fixed by styling `Link` with `buttonVariants`
+7. `AGENTS.md` project blurb now describes MCQ CRUD, not register/login/logout only
 
 **Deliverables:** recorded results in this PRD’s Current Status; `AGENTS.md` updated
 
-**Stop for review.** Then commit / deploy only if asked.
+**Stop for review.** Then commit / deploy only if asked. Remote D1 apply is a separate explicit ask.
 
 ---
 
@@ -638,7 +638,7 @@ Attempt copies the correctness snapshot from the choice; it does not trust a cli
 - [x] Route handlers do not query D1 directly
 - [x] No cookie, token, or server session is introduced; `created_by` comes from `sessionStorage` after login; attempts still have no `user_id`
 - [x] `npm test` is green for the auth suite plus the new MCQ tests
-- [ ] `npm run lint` and `npm run build` succeed after implementation
+- [x] `npm run lint` and `npm run build` succeed after implementation
 
 ---
 
@@ -778,6 +778,13 @@ Populate this section when bugs are found and fixed. Starters from the auth phas
 **Solution**: Keep the name in a single `<strong>` node.
 **Code Reference**: `src/components/mcq-list.tsx:218-220`
 
+### Base UI Button + Link console error
+
+**Problem**: Next.js / browser console: “A component that acts as a button expected a native `<button>` because the `nativeButton` prop is true.”
+**Cause**: `Button render={<Link />}` is not a native button.
+**Solution**: Style the `Link` with `buttonVariants()` instead of wrapping it in `Button`.
+**Code Reference**: `src/components/mcq-list.tsx:128-130`
+
 ### List lint: setState in effect
 
 **Problem**: `react-hooks/set-state-in-effect` flags `void load()` when `load` calls `setState` before `await`.
@@ -811,7 +818,7 @@ When working with this PRD:
 ## Current Status
 
 **Last Updated**: 2026-09-02
-**Current Phase**: Phase 4 - MCQ UI
+**Current Phase**: Phase 5 - Verify
 **Status**: COMPLETED — waiting for review
-**Verification**: `npm test` 20 files, 108 passed. `npm run lint` exit 0 (after moving list fetch so setState happens after await; `.wrangler/**` added to ESLint ignores). Page shells on `npm run dev`: `/mcqs`, `/mcqs/new`, `/mcqs/:id/edit`, `/mcqs/:id/preview` all 200. No browser MCP here, so click-through of login → create → preview → delete was not run. Build / Workers preview is Phase 5.
-**Next Steps**: Jyothika reviews Phase 4 in the browser (`npm run dev`: login → list → create → edit → preview correct/incorrect → delete → cancel → logout). Commit / deploy only if asked. After review, proceed to Phase 5 only when asked.
+**Verification**: `npm test` 20 files, 108 passed. `npm run lint` exit 0. `npm run build` exit 0. `npm run preview` on `http://127.0.0.1:8787` with local D1: create/update/attempt/delete HTTP paths green; D1 row had `name`/`question`/`created_by`/timestamps, 2 choices, attempt snapshots 1 then 0. `AGENTS.md` updated. No browser MCP this session — UI click-through was Phase 4; preview page shells 200.
+**Next Steps**: Deploy and remote D1 apply only if asked. This capability’s phases are complete.

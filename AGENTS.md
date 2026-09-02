@@ -12,10 +12,11 @@ Keep it current. An out-of-date description here misleads every future conversat
 -->
 
 Quiz Maker is a greenfield app for teachers who will share a bank of multiple-choice
-questions. The current work is register, login, and logout only. Cloudflare D1 is
-bound as `DB` with a local `users` migration; Vitest is the unit-test runner. The
-technical PRD in `ai-workspace/register_login_logout_PRD.md` is the source of truth
-for the current phase.
+questions. Teachers can register, log in, log out, and create, list, edit, preview,
+and delete questions. Cloudflare D1 is bound as `DB` with local `users`, `mcqs`,
+`mcq_choices`, and `mcq_attempts` migrations; Vitest is the unit-test runner. The
+technical PRD in `ai-workspace/mcq-crud_prd.md` is the source of truth for the
+current capability.
 
 ## Stack
 
@@ -29,8 +30,10 @@ for the current phase.
 - **Vitest** for unit tests (`npm test`)
 - **Zod** for request validation
 
-Register, login, and logout HTTP routes exist. No AI SDK is installed yet. Do not
-write code that imports one without adding it first and telling the user.
+Register, login, logout, and MCQ CRUD / attempt HTTP routes exist. There is still
+no server session: create reads `createdBy` from `sessionStorage` after login. No
+AI SDK is installed yet. Do not write code that imports one without adding it
+first and telling the user.
 
 ## Layout
 

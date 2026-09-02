@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { EllipsisVertical } from "lucide-react";
 import { clearCurrentUser } from "@/lib/auth/current-user";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
 	Dialog,
 	DialogContent,
@@ -126,7 +126,9 @@ export function McqList() {
 	}
 
 	const createLink = (
-		<Button render={<Link href="/mcqs/new" />}>Create question</Button>
+		<Link href="/mcqs/new" className={buttonVariants()}>
+			Create question
+		</Link>
 	);
 
 	return (

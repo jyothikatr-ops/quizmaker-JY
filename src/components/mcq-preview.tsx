@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -107,9 +107,9 @@ export function McqPreview({ id }: { id: string }) {
 					<CardTitle>Question not found</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Button variant="outline" render={<Link href="/mcqs" />}>
+					<Link href="/mcqs" className={buttonVariants({ variant: "outline" })}>
 						Back to questions
-					</Button>
+					</Link>
 				</CardContent>
 			</Card>
 		);
@@ -151,9 +151,9 @@ export function McqPreview({ id }: { id: string }) {
 					>
 						Submit answer
 					</Button>
-					<Button variant="outline" render={<Link href="/mcqs" />}>
+					<Link href="/mcqs" className={buttonVariants({ variant: "outline" })}>
 						Back to questions
-					</Button>
+					</Link>
 				</div>
 			</CardContent>
 		</Card>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -195,9 +195,9 @@ export function McqForm(props: McqFormProps) {
 					<CardTitle>Question not found</CardTitle>
 				</CardHeader>
 				<CardContent>
-					<Button variant="outline" render={<Link href="/mcqs" />}>
+					<Link href="/mcqs" className={buttonVariants({ variant: "outline" })}>
 						Back to questions
-					</Button>
+					</Link>
 				</CardContent>
 			</Card>
 		);
